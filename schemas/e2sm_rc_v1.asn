@@ -1,0 +1,105 @@
+-- E2SM-RC v1.0 ASN.1 Schema (O-RAN.WG3.E2SM-RC-v01.03)
+-- Simplified schema for asn1tools APER codec compilation.
+-- Supports E2SM-RC control messages for beam handover.
+
+E2SM-RC-IEs {
+    iso(1) identified-organization(3) dod(6) internet(1)
+    private(4) enterprise(1) oran(53148) e2(1)
+    version1(1) e2sm(2) e2sm-rc-ies(3)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+    ;
+
+-- Control Header
+E2SM-RC-ControlHeader ::= CHOICE {
+    controlHeader-Format1   E2SM-RC-ControlHeader-Format1,
+    controlHeader-Format2   E2SM-RC-ControlHeader-Format2,
+    ...
+}
+
+E2SM-RC-ControlHeader-Format1 ::= SEQUENCE {
+    ric-Style-Type          INTEGER,
+    ric-ControlAction-ID    INTEGER,
+    ...
+}
+
+E2SM-RC-ControlHeader-Format2 ::= SEQUENCE {
+    ueID    OCTET STRING     OPTIONAL,
+    ...
+}
+
+-- Control Message
+E2SM-RC-ControlMessage ::= CHOICE {
+    controlMessage-Format1  E2SM-RC-ControlMessage-Format1,
+    controlMessage-Format2  E2SM-RC-ControlMessage-Format2,
+    ...
+}
+
+E2SM-RC-ControlMessage-Format1 ::= SEQUENCE {
+    ranP-List   SEQUENCE (SIZE(0..65535)) OF RANParameter-Item,
+    ...
+}
+
+E2SM-RC-ControlMessage-Format2 ::= SEQUENCE {
+    ueID        OCTET STRING     OPTIONAL,
+    ranP-List   SEQUENCE (SIZE(0..65535)) OF RANParameter-Item,
+    ...
+}
+
+RANParameter-Item ::= SEQUENCE {
+    ranParameter-ID         INTEGER (1..4294967295),
+    ranParameter-valueType  RANParameter-ValueType,
+    ...
+}
+
+RANParameter-ValueType ::= CHOICE {
+    ranP-Choice-ElementTrue     RANParameter-Value,
+    ranP-Choice-ElementFalse    RANParameter-Value,
+    ranP-Choice-Structure       RANParameter-STRUCTURE,
+    ranP-Choice-List            RANParameter-LIST,
+    ...
+}
+
+RANParameter-Value ::= SEQUENCE {
+    ranParameter-value  RANParameter-Testing-Item,
+    ...
+}
+
+RANParameter-Testing-Item ::= CHOICE {
+    valueInt    INTEGER,
+    valueEnum   INTEGER,
+    valueBool   BOOLEAN,
+    valueBitS   BIT STRING,
+    valueOctS   OCTET STRING,
+    valuePrtS   PrintableString,
+    valueReal   REAL,
+    ...
+}
+
+RANParameter-STRUCTURE ::= SEQUENCE {
+    sequence-of-ranParameters   SEQUENCE (SIZE(1..65535)) OF RANParameter-Item,
+    ...
+}
+
+RANParameter-LIST ::= SEQUENCE {
+    list-of-ranParameter    SEQUENCE (SIZE(1..65535)) OF RANParameter-STRUCTURE,
+    ...
+}
+
+-- Control Outcome
+E2SM-RC-ControlOutcome ::= CHOICE {
+    controlOutcome-Format1  E2SM-RC-ControlOutcome-Format1,
+    ...
+}
+
+E2SM-RC-ControlOutcome-Format1 ::= SEQUENCE {
+    ranP-List   SEQUENCE (SIZE(0..255)) OF RANParameter-Item,
+    ...
+}
+
+END

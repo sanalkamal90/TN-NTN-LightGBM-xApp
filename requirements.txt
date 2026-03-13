@@ -1,0 +1,30 @@
+# TN-NTN Broadband Handover xApp — Dependencies
+# Ensemble model: LightGBM + XGBoost + CatBoost
+
+# ML Frameworks
+lightgbm>=4.1.0
+xgboost>=2.0.0
+catboost>=1.2.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.1.0
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+
+# O-RAN xApp SDK (RMR + SDL + MDC logging)
+# Requires Python 3.11 (hiredis<3 uses imp module removed in 3.12)
+msgpack>=1.0.0
+mdclogpy>=1.1.0
+ricsdl>=3.0.0
+ricxappframe>=3.2.0
+protobuf>=3.20.0,<4.0.0
+
+# ASN.1 codec (E2AP / E2SM-KPM / E2SM-RC)
+asn1tools>=0.166.0
+
+# Metrics
+prometheus-client>=0.19.0

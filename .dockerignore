@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Python caches
+__pycache__
+*.py[cod]
+*.egg-info
+.eggs
+
+# Virtual environments
+venv
+.venv
+env
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+
+# Tests
+tests/
+.pytest_cache
+htmlcov
+.coverage
+
+# Docs
+*.md
+LICENSE
+
+# Docker
+docker-compose.yml
+.dockerignore
+
+# Dev files
+.env
+.env.local

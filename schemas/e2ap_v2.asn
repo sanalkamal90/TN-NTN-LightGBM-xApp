@@ -1,0 +1,282 @@
+-- E2AP v2.0 ASN.1 Schema (O-RAN.WG3.E2AP-v02.03)
+-- Simplified schema for asn1tools APER codec compilation.
+-- Covers RICindication, RICcontrolRequest, RICsubscription lifecycle.
+
+E2AP-PDU-Contents {
+    iso(1) identified-organization(3) dod(6) internet(1)
+    private(4) enterprise(1) oran(53148) e2(1)
+    version2(2) e2ap(1) e2ap-pdu-contents(1)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+    ;
+
+-- ================================================================
+-- RIC Indication
+-- ================================================================
+
+RICindication ::= SEQUENCE {
+    protocolIEs     SEQUENCE (SIZE(0..65535)) OF RICindication-IEs,
+    ...
+}
+
+RICindication-IEs ::= SEQUENCE {
+    id              INTEGER (0..65535),
+    criticality     ENUMERATED {reject, ignore, notify},
+    value           RICindication-IEs-Value,
+    ...
+}
+
+RICindication-IEs-Value ::= CHOICE {
+    ricRequestID            RICRequestID,
+    ranFunctionID           INTEGER (0..4095),
+    ricActionID             INTEGER (0..255),
+    ricIndicationSN         INTEGER (0..65535),
+    ricIndicationType       ENUMERATED {report, insert, ...},
+    ricIndicationHeader     OCTET STRING,
+    ricIndicationMessage    OCTET STRING,
+    ...
+}
+
+-- ================================================================
+-- RIC Control Request
+-- ================================================================
+
+RICcontrolRequest ::= SEQUENCE {
+    protocolIEs     SEQUENCE (SIZE(0..65535)) OF RICcontrolRequest-IEs,
+    ...
+}
+
+RICcontrolRequest-IEs ::= SEQUENCE {
+    id              INTEGER (0..65535),
+    criticality     ENUMERATED {reject, ignore, notify},
+    value           RICcontrolRequest-IEs-Value,
+    ...
+}
+
+RICcontrolRequest-IEs-Value ::= CHOICE {
+    ricRequestID            RICRequestID,
+    ranFunctionID           INTEGER (0..4095),
+    ricControlHeader        OCTET STRING,
+    ricControlMessage       OCTET STRING,
+    ricControlAckRequest    ENUMERATED {noAck, ack, nAck, ...},
+    ...
+}
+
+-- ================================================================
+-- RIC Subscription Request
+-- ================================================================
+
+RICsubscriptionRequest ::= SEQUENCE {
+    protocolIEs     SEQUENCE (SIZE(0..65535)) OF RICsubscriptionRequest-IEs,
+    ...
+}
+
+RICsubscriptionRequest-IEs ::= SEQUENCE {
+    id              INTEGER (0..65535),
+    criticality     ENUMERATED {reject, ignore, notify},
+    value           RICsubscriptionRequest-IEs-Value,
+    ...
+}
+
+RICsubscriptionRequest-IEs-Value ::= CHOICE {
+    ricRequestID            RICRequestID,
+    ranFunctionID           INTEGER (0..4095),
+    ricSubscriptionDetails  RICsubscriptionDetails,
+    ...
+}
+
+RICsubscriptionDetails ::= SEQUENCE {
+    ricEventTriggerDefinition   OCTET STRING,
+    ricAction-ToBeSetup-List    RICaction-ToBeSetup-List,
+    ...
+}
+
+RICaction-ToBeSetup-List ::= SEQUENCE (SIZE(1..16)) OF RICaction-ToBeSetup-Item
+
+RICaction-ToBeSetup-Item ::= SEQUENCE {
+    ricActionID         INTEGER (0..255),
+    ricActionType       ENUMERATED {report, insert, policy, ...},
+    ricActionDefinition OCTET STRING    OPTIONAL,
+    ...
+}
+
+-- ================================================================
+-- RIC Subscription Response
+-- ================================================================
+
+RICsubscriptionResponse ::= SEQUENCE {
+    protocolIEs     SEQUENCE (SIZE(0..65535)) OF RICsubscriptionResponse-IEs,
+    ...
+}
+
+RICsubscriptionResponse-IEs ::= SEQUENCE {
+    id              INTEGER (0..65535),
+    criticality     ENUMERATED {reject, ignore, notify},
+    value           RICsubscriptionResponse-IEs-Value,
+    ...
+}
+
+RICsubscriptionResponse-IEs-Value ::= CHOICE {
+    ricRequestID                RICRequestID,
+    ranFunctionID               INTEGER (0..4095),
+    ricActionAdmitted-List      RICaction-Admitted-List,
+    ricActionNotAdmitted-List   RICaction-NotAdmitted-List,
+    ...
+}
+
+RICaction-Admitted-List ::= SEQUENCE (SIZE(1..16)) OF RICaction-Admitted-Item
+
+RICaction-Admitted-Item ::= SEQUENCE {
+    ricActionID     INTEGER (0..255),
+    ...
+}
+
+RICaction-NotAdmitted-List ::= SEQUENCE (SIZE(0..16)) OF RICaction-NotAdmitted-Item
+
+RICaction-NotAdmitted-Item ::= SEQUENCE {
+    ricActionID     INTEGER (0..255),
+    cause           Cause,
+    ...
+}
+
+-- ================================================================
+-- RIC Subscription Failure
+-- ================================================================
+
+RICsubscriptionFailure ::= SEQUENCE {
+    protocolIEs     SEQUENCE (SIZE(0..65535)) OF RICsubscriptionFailure-IEs,
+    ...
+}
+
+RICsubscriptionFailure-IEs ::= SEQUENCE {
+    id              INTEGER (0..65535),
+    criticality     ENUMERATED {reject, ignore, notify},
+    value           RICsubscriptionFailure-IEs-Value,
+    ...
+}
+
+RICsubscriptionFailure-IEs-Value ::= CHOICE {
+    ricRequestID    RICRequestID,
+    ranFunctionID   INTEGER (0..4095),
+    cause           Cause,
+    ...
+}
+
+-- ================================================================
+-- RIC Subscription Delete
+-- ================================================================
+
+RICsubscriptionDeleteRequest ::= SEQUENCE {
+    protocolIEs     SEQUENCE (SIZE(0..65535)) OF RICsubscriptionDeleteRequest-IEs,
+    ...
+}
+
+RICsubscriptionDeleteRequest-IEs ::= SEQUENCE {
+    id              INTEGER (0..65535),
+    criticality     ENUMERATED {reject, ignore, notify},
+    value           RICsubscriptionDeleteRequest-IEs-Value,
+    ...
+}
+
+RICsubscriptionDeleteRequest-IEs-Value ::= CHOICE {
+    ricRequestID    RICRequestID,
+    ranFunctionID   INTEGER (0..4095),
+    ...
+}
+
+RICsubscriptionDeleteResponse ::= SEQUENCE {
+    protocolIEs     SEQUENCE (SIZE(0..65535)) OF RICsubscriptionDeleteResponse-IEs,
+    ...
+}
+
+RICsubscriptionDeleteResponse-IEs ::= SEQUENCE {
+    id              INTEGER (0..65535),
+    criticality     ENUMERATED {reject, ignore, notify},
+    value           RICsubscriptionDeleteResponse-IEs-Value,
+    ...
+}
+
+RICsubscriptionDeleteResponse-IEs-Value ::= CHOICE {
+    ricRequestID    RICRequestID,
+    ranFunctionID   INTEGER (0..4095),
+    ...
+}
+
+-- ================================================================
+-- Common types
+-- ================================================================
+
+RICRequestID ::= SEQUENCE {
+    ricRequestorID  INTEGER (0..65535),
+    ricInstanceID   INTEGER (0..65535),
+    ...
+}
+
+Cause ::= CHOICE {
+    ricRequest      CauseRICrequest,
+    ricService      CauseRICservice,
+    e2Node          CauseE2node,
+    transport       CauseTransport,
+    protocol        CauseProtocol,
+    misc            CauseMisc,
+    ...
+}
+
+CauseRICrequest ::= ENUMERATED {
+    ran-function-id-invalid,
+    action-not-supported,
+    excessive-actions,
+    duplicate-action,
+    duplicate-event-trigger,
+    function-resource-limit,
+    request-id-unknown,
+    inconsistent-action-subsequent-action-sequence,
+    control-message-invalid,
+    ric-call-process-id-invalid,
+    unspecified,
+    ...
+}
+
+CauseRICservice ::= ENUMERATED {
+    ran-function-not-supported,
+    excessive-functions,
+    ric-resource-limit,
+    ...
+}
+
+CauseE2node ::= ENUMERATED {
+    e2node-component-unknown,
+    ...
+}
+
+CauseTransport ::= ENUMERATED {
+    unspecified,
+    transport-resource-unavailable,
+    ...
+}
+
+CauseProtocol ::= ENUMERATED {
+    transfer-syntax-error,
+    abstract-syntax-error-reject,
+    abstract-syntax-error-ignore-and-notify,
+    message-not-compatible-with-receiver-state,
+    semantic-error,
+    abstract-syntax-error-falsely-constructed-message,
+    unspecified,
+    ...
+}
+
+CauseMisc ::= ENUMERATED {
+    control-processing-overload,
+    hardware-failure,
+    om-intervention,
+    unspecified,
+    ...
+}
+
+END

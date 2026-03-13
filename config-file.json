@@ -1,0 +1,163 @@
+{
+  "xapp_name": "tn-ntn-handover",
+  "version": "1.0.0",
+  "containers": [
+    {
+      "name": "tn-ntn-handover",
+      "image": {
+        "registry": "nexus3.o-ran-sc.org:10002",
+        "name": "tn-ntn-handover",
+        "tag": "1.0.0"
+      }
+    }
+  ],
+  "messaging": {
+    "ports": [
+      {
+        "name": "rmr-data",
+        "container": "tn-ntn-handover",
+        "port": 4560,
+        "rxMessages": [
+          "RIC_INDICATION",
+          "A1_POLICY_REQ",
+          "RIC_SUB_RESP",
+          "RIC_SUB_FAILURE",
+          "RIC_SUB_DEL_RESP",
+          "RIC_HEALTH_CHECK_REQ"
+        ],
+        "txMessages": [
+          "RIC_CONTROL_REQ",
+          "A1_POLICY_RESP",
+          "A1_POLICY_QUERY",
+          "RIC_SUB_REQ",
+          "RIC_SUB_DEL_REQ",
+          "RIC_HEALTH_CHECK_RESP"
+        ],
+        "policies": [],
+        "description": "RMR data port for multi-orbit E2 indications and A1 policies"
+      },
+      {
+        "name": "rmr-route",
+        "container": "tn-ntn-handover",
+        "port": 4561,
+        "description": "RMR route table distribution port"
+      }
+    ]
+  },
+  "rmr": {
+    "protPort": "tcp:4560",
+    "maxSize": 4096,
+    "numWorkers": 1,
+    "txMessages": [
+      {"name": "RIC_CONTROL_REQ", "id": 12040},
+      {"name": "A1_POLICY_RESP", "id": 20011},
+      {"name": "A1_POLICY_QUERY", "id": 20012},
+      {"name": "RIC_SUB_REQ", "id": 12010},
+      {"name": "RIC_SUB_DEL_REQ", "id": 12020},
+      {"name": "RIC_HEALTH_CHECK_RESP", "id": 101}
+    ],
+    "rxMessages": [
+      {"name": "RIC_INDICATION", "id": 12050},
+      {"name": "A1_POLICY_REQ", "id": 20010},
+      {"name": "RIC_SUB_RESP", "id": 12011},
+      {"name": "RIC_SUB_FAILURE", "id": 12012},
+      {"name": "RIC_SUB_DEL_RESP", "id": 12021},
+      {"name": "RIC_HEALTH_CHECK_REQ", "id": 100}
+    ]
+  },
+  "controls": {
+    "elevation_threshold_deg": {
+      "type": "number",
+      "default": 15.0,
+      "description": "Minimum elevation angle (degrees) for NTN service. Below this, handover to TN or alternate orbit is recommended."
+    },
+    "rsrp_threshold_dbm": {
+      "type": "number",
+      "default": -110.0,
+      "description": "RSRP threshold (dBm) below which handover is recommended. Range: -156 to -29 per 3GPP TS 38.133."
+    },
+    "beam_handover_window_s": {
+      "type": "number",
+      "default": 2.0,
+      "description": "Handover preparation window in seconds. Controls how early the xApp prepares beam handover."
+    },
+    "doppler_compensation": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable Doppler frequency compensation for LEO/MEO satellite links."
+    }
+  },
+  "metrics": [
+    {
+      "name": "prediction_count",
+      "type": "counter",
+      "description": "Total ensemble predictions (LGB+XGB+CB) executed"
+    },
+    {
+      "name": "handover_count",
+      "type": "counter",
+      "description": "Total beam handover control requests sent"
+    },
+    {
+      "name": "avg_latency_ms",
+      "type": "gauge",
+      "description": "Average ensemble prediction latency in milliseconds"
+    },
+    {
+      "name": "indication_count",
+      "type": "counter",
+      "description": "Total E2 indications (RIC_INDICATION) processed"
+    },
+    {
+      "name": "control_count",
+      "type": "counter",
+      "description": "Total E2 control requests (RIC_CONTROL_REQ) sent"
+    },
+    {
+      "name": "a1_policy_count",
+      "type": "counter",
+      "description": "Total A1 policy updates received and applied"
+    },
+    {
+      "name": "orbit_distribution_tn",
+      "type": "counter",
+      "description": "Predictions classified as TN (terrestrial)"
+    },
+    {
+      "name": "orbit_distribution_ntn",
+      "type": "counter",
+      "description": "Predictions classified as NTN (non-terrestrial)"
+    }
+  ],
+  "serviceModels": [
+    {
+      "name": "E2SM-KPM",
+      "version": "3.0",
+      "description": "E2 Service Model for Key Performance Measurement with NTN extensions (multi-orbit RSRP, elevation, Doppler)"
+    },
+    {
+      "name": "E2SM-RC",
+      "version": "1.0",
+      "description": "E2 Service Model for RAN Control (beam handover, orbit tier switching)"
+    },
+    {
+      "name": "E2SM-TN",
+      "version": "1.0",
+      "description": "E2 Service Model for satellite-specific KPMs (ephemeris, beam config, rain fade)"
+    }
+  ],
+  "probes": {
+    "readiness": {
+      "httpGet": {
+        "path": "/xapp/v1/status",
+        "port": 8080
+      }
+    },
+    "liveness": {
+      "httpGet": {
+        "path": "/health",
+        "port": 8080
+      }
+    }
+  }
+}

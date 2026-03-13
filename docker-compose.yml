@@ -1,0 +1,69 @@
+services:
+  # -----------------------------------------------------------
+  # Redis (DBAAS — O-RAN Shared Data Layer backend)
+  # -----------------------------------------------------------
+  dbaas:
+    image: redis:7-alpine
+    container_name: tn-ntn-dbaas
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - dbaas-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - tn-ntn
+
+  # -----------------------------------------------------------
+  # TN-NTN Handover xApp (LightGBM Ensemble)
+  # -----------------------------------------------------------
+  xapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tn-ntn-handover:latest
+    container_name: tn-ntn-handover
+    restart: unless-stopped
+    ports:
+      - "8080:8080"         # FastAPI (REST + health)
+      - "4560:4560"         # RMR data port
+      - "4561:4561"         # RMR route port
+    volumes:
+      - ./models:/app/models:ro
+    environment:
+      - XAPP_PORT=8080
+      - MODEL_PATH=/app/models/multi_orbit_ensemble.pkl
+      # O-RAN RIC / SDL
+      - DBAAS_SERVICE_HOST=dbaas
+      - DBAAS_SERVICE_PORT=6379
+      - RMR_SRC_ID=tn-ntn-handover
+      - RMR_SEED_RT=${RMR_SEED_RT:-}
+      # xApp configuration
+      - RIC_URL=${RIC_URL:-}
+      - XAPP_ID=${XAPP_ID:-tn-ntn-handover-01}
+      - ELEVATION_THRESHOLD_DEG=${ELEVATION_THRESHOLD_DEG:-15.0}
+      - RSRP_THRESHOLD_DBM=${RSRP_THRESHOLD_DBM:--110.0}
+    depends_on:
+      dbaas:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - tn-ntn
+
+volumes:
+  dbaas-data:
+    driver: local
+
+networks:
+  tn-ntn:
+    driver: bridge

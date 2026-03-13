@@ -1,0 +1,89 @@
+---
+# O-RAN WG6 xApp Descriptor — TN-NTN Broadband Handover xApp
+xapp:
+  name: tn-ntn-handover
+  version: 1.0.0
+  description: >
+    Multi-orbit (LEO/MEO/GEO) broadband TN-NTN handover xApp using
+    LightGBM + XGBoost + CatBoost ensemble model with 52 features.
+    Provides reactive handover decisions (<10ms) for cell reselection.
+  vendor: research
+  license: Apache-2.0
+
+  containers:
+    - name: tn-ntn-handover
+      image:
+        registry: nexus3.o-ran-sc.org:10002
+        name: tn-ntn-handover
+        tag: 1.0.0
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+      ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: rmr-data
+          containerPort: 4560
+          protocol: TCP
+        - name: rmr-route
+          containerPort: 4561
+          protocol: TCP
+      readinessProbe:
+        httpGet:
+          path: /xapp/v1/status
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 20
+      env:
+        - name: DBAAS_SERVICE_HOST
+          value: dbaas
+        - name: RMR_SRC_ID
+          value: tn-ntn-handover
+        - name: MODEL_PATH
+          value: /app/models/multi_orbit_ensemble.pkl
+        - name: XAPP_PORT
+          value: "8080"
+
+  messaging:
+    ports:
+      - name: rmr-data
+        port: 4560
+        rxMessages:
+          - RIC_INDICATION
+          - A1_POLICY_REQ
+          - RIC_HEALTH_CHECK_REQ
+        txMessages:
+          - RIC_CONTROL_REQ
+          - A1_POLICY_RESP
+          - RIC_HEALTH_CHECK_RESP
+
+  serviceModels:
+    - name: E2SM-KPM
+      version: "3.0"
+    - name: E2SM-RC
+      version: "1.0"
+
+  controls:
+    elevation_threshold_deg:
+      type: number
+      default: 15.0
+    rsrp_threshold_dbm:
+      type: number
+      default: -110.0
+    beam_handover_window_s:
+      type: number
+      default: 2.0
+    doppler_compensation:
+      type: boolean
+      default: true
