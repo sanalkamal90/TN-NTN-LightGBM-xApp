@@ -309,12 +309,12 @@ class ProtocolHarmonizationLayer:
                 if l.propagation_delay_ms <= self.latency_requirement_ms
             ]
             if not eligible:
-                eligible = sorted(
-                    candidates, key=lambda x: x[1].propagation_delay_ms
-                )
-                selection_reason = "lowest latency (none met requirement)"
-
-            best = max(eligible, key=lambda x: x[1].quality_score)
+                eligible = candidates
+                # Pick lowest latency when none meets requirement
+                best = min(eligible, key=lambda x: x[1].propagation_delay_ms)
+                selection_reason = f"lowest latency (none met {self.latency_requirement_ms}ms)"
+            else:
+                best = max(eligible, key=lambda x: x[1].quality_score)
             recommended_tier = best[0]
             if selection_reason == "current serving orbit":
                 selection_reason = f"best quality ({best[1].quality_score:.2f})"

@@ -174,9 +174,7 @@ class XAppAdapter:
                     logger.error("Indication processing failed: %s", e)
                     result = None
 
-                if result:
-                    ue_id = decoded.get("ueId", "unknown")
-                    self._sdl.store_prediction(ue_id, result)
+                # result already stored to SDL inside handle_indication()
         except Exception as e:
             logger.error("RMR indication handler error: %s", e)
         finally:
@@ -295,17 +293,21 @@ class XAppAdapter:
         elevation = features.get("elevationDeg", 45.0)
         recommended_orbit = result.get("recommended_orbit", "LEO")
 
+        reasons = []
         if rsrp_ntn < self._rsrp_threshold_dbm:
             action = "HANDOVER_RECOMMENDED"
-            action_params["reason"] = "rsrp_below_threshold"
+            reasons.append("rsrp_below_threshold")
             action_params["current_rsrp_dbm"] = rsrp_ntn
             action_params["threshold_dbm"] = self._rsrp_threshold_dbm
 
         if elevation < self._elevation_threshold_deg:
             action = "HANDOVER_RECOMMENDED"
-            action_params["reason"] = "elevation_below_threshold"
+            reasons.append("elevation_below_threshold")
             action_params["current_elevation_deg"] = elevation
             action_params["threshold_deg"] = self._elevation_threshold_deg
+
+        if reasons:
+            action_params["reason"] = "+".join(reasons)
 
         if result.get("decision") == 1 and action == "HANDOVER_RECOMMENDED":
             action = "BEAM_HANDOVER"
