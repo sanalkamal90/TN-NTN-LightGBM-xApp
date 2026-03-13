@@ -72,6 +72,10 @@ class EnsemblePredictor:
         else:
             data = pd.DataFrame(df)
 
+        # Enforce consistent column order across all frameworks
+        if self.feature_names and set(self.feature_names).issubset(data.columns):
+            data = data[self.feature_names]
+
         probs = np.zeros(len(data))
 
         if self.weights.get("lgbm", 0) > 0:

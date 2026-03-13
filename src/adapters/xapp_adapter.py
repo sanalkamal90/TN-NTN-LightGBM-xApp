@@ -75,6 +75,7 @@ class XAppAdapter:
         self._handover_count = 0
         self._last_indication_time: Optional[float] = None
         self._orbit_distribution: Dict[str, int] = {"TN": 0, "NTN": 0}
+        self._ue_serving_network: Dict[str, str] = {}  # per-UE: "TN" or "NTN"
 
         # Configurable thresholds (updated via A1 policy)
         self._elevation_threshold_deg = 15.0
@@ -290,29 +291,64 @@ class XAppAdapter:
         action = "NONE"
         action_params = {}
         rsrp_ntn = features.get("rsrpNtn", -100.0)
+        rsrp_tn = features.get("rsrpTn", -85.0)
         elevation = features.get("elevationDeg", 45.0)
         recommended_orbit = result.get("recommended_orbit", "LEO")
 
+        # Determine current serving network from previous prediction or orbit type
+        current_network = self._ue_serving_network.get(ue_id, "TN")
+        decision = result.get("decision", 0)  # 0=TN, 1=NTN
+        predicted_label = result.get("label", "TN")
+
+        # Check if model predicts a switch from current network
+        model_wants_switch = (
+            (current_network == "TN" and decision == 1)
+            or (current_network == "NTN" and decision == 0)
+        )
+
+        # Threshold gates: check the CURRENT serving network's quality
         reasons = []
-        if rsrp_ntn < self._rsrp_threshold_dbm:
-            action = "HANDOVER_RECOMMENDED"
-            reasons.append("rsrp_below_threshold")
-            action_params["current_rsrp_dbm"] = rsrp_ntn
-            action_params["threshold_dbm"] = self._rsrp_threshold_dbm
+        current_degraded = False
+        if current_network == "NTN":
+            # On NTN: check if NTN signal is degrading
+            if rsrp_ntn < self._rsrp_threshold_dbm:
+                reasons.append("ntn_rsrp_below_threshold")
+                action_params["current_rsrp_dbm"] = rsrp_ntn
+                current_degraded = True
+            if elevation < self._elevation_threshold_deg:
+                reasons.append("ntn_elevation_below_threshold")
+                action_params["current_elevation_deg"] = elevation
+                current_degraded = True
+        else:
+            # On TN: check if TN signal is degrading
+            if rsrp_tn < self._rsrp_threshold_dbm:
+                reasons.append("tn_rsrp_below_threshold")
+                action_params["current_rsrp_dbm"] = rsrp_tn
+                current_degraded = True
 
-        if elevation < self._elevation_threshold_deg:
-            action = "HANDOVER_RECOMMENDED"
-            reasons.append("elevation_below_threshold")
-            action_params["current_elevation_deg"] = elevation
-            action_params["threshold_deg"] = self._elevation_threshold_deg
-
-        if reasons:
-            action_params["reason"] = "+".join(reasons)
-
-        if result.get("decision") == 1 and action == "HANDOVER_RECOMMENDED":
+        # Decision logic: handover when model AND thresholds agree
+        if model_wants_switch and current_degraded:
+            # Both model and thresholds agree: execute handover
             action = "BEAM_HANDOVER"
+            action_params["reason"] = "+".join(reasons)
+            action_params["from_network"] = current_network
+            action_params["to_network"] = predicted_label
             action_params["target_orbit"] = recommended_orbit
             self._handover_count += 1
+            # Update serving network tracking
+            self._ue_serving_network[ue_id] = predicted_label
+        elif model_wants_switch:
+            # Model wants switch but current signal is still OK — advisory only
+            action = "HANDOVER_PREDICTED"
+            action_params["reason"] = "model_predicts_switch"
+            action_params["from_network"] = current_network
+            action_params["to_network"] = predicted_label
+            action_params["confidence"] = result.get("confidence", 0.0)
+        elif current_degraded:
+            # Current signal degraded but model doesn't recommend switch
+            action = "SIGNAL_DEGRADED"
+            action_params["reason"] = "+".join(reasons)
+            action_params["current_network"] = current_network
 
         label = result.get("label", "TN")
         self._orbit_distribution[label] = self._orbit_distribution.get(label, 0) + 1
@@ -329,7 +365,7 @@ class XAppAdapter:
 
         self._sdl.store_prediction(ue_id, dict(response))
 
-        if action in ("HANDOVER_RECOMMENDED", "BEAM_HANDOVER") and cell_id:
+        if action == "BEAM_HANDOVER" and cell_id:
             self.send_control_request(cell_id, {
                 "type": action,
                 "targetOrbit": recommended_orbit,

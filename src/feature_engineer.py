@@ -108,16 +108,19 @@ class FeatureEngineer:
         now = time.time()
         state = self._get_or_create_state(ue_id)
 
-        # -- Extract raw measurements with safe defaults --
-        sinr_ntn = _float(raw, "sinrNtn", "sinrNTN", default=-5.0)
-        sinr_tn = _float(raw, "sinrTn", "sinrTN_measured", default=10.0)
-        rsrp_ntn = _float(raw, "rsrpNtn", "rsrpNTN", default=-100.0)
-        rsrp_tn = _float(raw, "rsrpTn", "rsrpTN_measured", default=-85.0)
-        rsrq_ntn = _float(raw, "rsrqNtn", "rsrqNTN", default=-12.0)
-        rsrq_tn = _float(raw, "rsrqTn", "rsrqTN_measured", default=-10.0)
-        elevation = _float(raw, "elevationDeg", default=45.0)
+        # -- Extract raw measurements --
+        # Defaults use "no signal" sentinel values matching training pipeline:
+        # NTN defaults = very poor signal (model learns this means NTN unavailable)
+        # TN defaults = very poor signal (model learns this means TN unavailable)
+        sinr_ntn = _float(raw, "sinrNtn", "sinrNTN", default=-20.0)
+        sinr_tn = _float(raw, "sinrTn", "sinrTN_measured", default=-20.0)
+        rsrp_ntn = _float(raw, "rsrpNtn", "rsrpNTN", default=-140.0)
+        rsrp_tn = _float(raw, "rsrpTn", "rsrpTN_measured", default=-140.0)
+        rsrq_ntn = _float(raw, "rsrqNtn", "rsrqNTN", default=-20.0)
+        rsrq_tn = _float(raw, "rsrqTn", "rsrqTN_measured", default=-20.0)
+        elevation = _float(raw, "elevationDeg", default=0.0)
         doppler = _float(raw, "dopplerHz", default=0.0)
-        distance = _float(raw, "distanceKm", default=550.0)
+        distance = _float(raw, "distanceKm", default=0.0)
         path_loss = _float(raw, "pathLossDb", "pathLossDbNTN", default=0.0)
         shadowing = _float(raw, "shadowingDb", "shadowingDbNTN", default=0.0)
         rain_atten = _float(raw, "rainAttenuationDb", default=0.0)
@@ -136,8 +139,9 @@ class FeatureEngineer:
         best_geo_elev = _float(raw, "bestGEOElevationDeg", default=0.0)
 
         # -- Time encoding (diurnal pattern) --
-        hour_frac = (now % 86400) / 86400.0
+        # Use measurement timestamp if available, fall back to wall clock
         time_val = _float(raw, "time", default=now % 86400)
+        hour_frac = (time_val % 86400) / 86400.0
         time_sin = math.sin(2 * math.pi * hour_frac)
         time_cos = math.cos(2 * math.pi * hour_frac)
         time_position = hour_frac
