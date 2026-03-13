@@ -22,6 +22,7 @@ from typing import Callable, Dict, Optional
 from ricxappframe.xapp_frame import RMRXapp
 
 from ..ensemble_predictor import XAppEnsembleModel, FEATURE_NAMES
+from ..feature_engineer import FeatureEngineer
 from .e2_subscription_manager import (
     E2SubscriptionManager,
     RIC_SUB_RESP,
@@ -67,6 +68,7 @@ class XAppAdapter:
         self._rmr_ready = False
         self._sub_manager: Optional[E2SubscriptionManager] = None
 
+        self._feature_engineer = FeatureEngineer()
         self._a1_policies: Dict[str, dict] = {}
         self._indication_count = 0
         self._control_count = 0
@@ -275,11 +277,11 @@ class XAppAdapter:
         self._indication_count += 1
         self._last_indication_time = time.time()
 
-        ue_id = indication.get("ueId", "unknown")
+        ue_id = str(indication.get("ueId", "unknown"))
         cell_id = indication.get("cellGlobalId")
         meas_data = indication.get("measData", {})
 
-        features = self._extract_features(meas_data)
+        features = self._feature_engineer.compute(ue_id, meas_data)
 
         try:
             result = self._ensemble.predict_with_harmonization(features, meas_data)
@@ -312,6 +314,7 @@ class XAppAdapter:
 
         label = result.get("label", "TN")
         self._orbit_distribution[label] = self._orbit_distribution.get(label, 0) + 1
+        self._feature_engineer.update_decision(ue_id, result.get("decision", 0))
 
         response = {
             "ueId": ue_id,
@@ -335,7 +338,7 @@ class XAppAdapter:
         return response
 
     def _extract_features(self, meas_data: dict) -> dict:
-        """Extract 52 features from measurement data."""
+        """Extract 52 features from measurement data (legacy passthrough fallback)."""
         return {name: float(meas_data.get(name, 0.0) or 0.0) for name in FEATURE_NAMES}
 
     def handle_a1_policy(self, policy: dict) -> dict:
@@ -453,4 +456,5 @@ class XAppAdapter:
             "sdl_backend": self._sdl.status["backend"],
             "e2ap_decoder_ready": self._e2ap_decoder.ready,
             "subscriptions": self._sub_manager.status if self._sub_manager else None,
+            "feature_engineer": self._feature_engineer.metrics,
         }
