@@ -6,7 +6,7 @@ xapp:
   description: >
     Multi-orbit (LEO/MEO/GEO) broadband TN-NTN handover xApp using
     LightGBM + XGBoost + CatBoost ensemble model with 52 features.
-    Provides reactive handover decisions (<10ms) for cell reselection.
+    Provides predictive handover decisions (<10ms) for cell reselection.
   vendor: research
   license: Apache-2.0
 

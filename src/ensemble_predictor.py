@@ -3,7 +3,7 @@
 Wraps the multi_orbit_ensemble.pkl (3-framework ensemble) with:
   - 52-feature prediction interface
   - Protocol harmonization for multi-orbit link budgets
-  - Sub-10ms reactive inference for Near-RT RIC integration
+  - Sub-10ms predictive inference for Near-RT RIC integration
 
 The 52 features cover terrestrial/NTN signal quality, channel conditions,
 mobility state, temporal patterns, and per-orbit (LEO/MEO/GEO) measurements.

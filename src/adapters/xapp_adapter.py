@@ -2,7 +2,7 @@
 
 Provides ricxappframe RMRXapp integration for:
 - Receiving E2SM-KPM indications with multi-orbit measurements (LEO/MEO/GEO)
-- Integrating LightGBM ensemble for reactive predictions (<10ms)
+- Integrating LightGBM ensemble for predictive classification (<10ms) with temporal context features
 - Sending E2SM-RC control requests for beam handover execution
 - Handling A1 policy updates (coverage thresholds, elevation windows)
 - Protocol harmonization integration for multi-orbit signal normalization
